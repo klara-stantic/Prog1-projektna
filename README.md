@@ -6,8 +6,6 @@ V nalogi bom analizirala notne zapise, ki so na voljo na spletni strani
 Izhodiščno število analiziranih elementov bo 200, pri čemer bom izbrala tiste z najvišjo oceno. 
 V primeru, da se bo to zdelo smiselno glede na pridobljene podatke, bom število elementov dvignila do 500.
 
-testtesttest
-
 Za posamezen vnos me bodo zanimali naslednji podatki:
 * Naslov in avtor
 * Mesto na seznamu 
