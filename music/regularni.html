@@ -1,0 +1,18 @@
+Pomožen dokument z regularnimi izrazi
+vmesna iskanja z grupami
+<article class=\"c9ju0 J5IQp mX2qa\">.*?<span class=\"xBwRG Al3lQ HtKJn\">(.*?)</span>.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(.*?)</h2>.*?<div class=\"djeI8\"><.*?>(.*?)</a>.*?</div></article>
+
+regularen za bloke 
+<article class=\"c9ju0 J5IQp mX2qa\">(.*?)</div></article>
+
+razrezan blok
+<article class=\"c9ju0 J5IQp mX2qa\">.*?<span class=\"xBwRG Al3lQ HtKJn\">(.*?)</span>.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(.*?)</h2>.*?<div class=\"djeI8\"><.*?>(.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">((.*?) • (.*?) • (.*?) • (.*?) • (.*?) • (.*?))</div>.*?</div><div class=\"C4LKv fLob3 J5IQp DIiWA\">(.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(.*?)</div>.*?</div></article>
+
+razrezan blok s poimenovanimi grupami
+<article class=\"c9ju0 J5IQp mX2qa\">.*?<span class=\"xBwRG .*? HtKJn\">(?P<tezavnost>.*?)</span>.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<naslov>.*?)</h2>.*?<div class=\"djeI8\"><.*?>(?P<avtor>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">((?P<parts>.*?) • (?P<pages>.*?) • (?P<time>.*?) • (?P<date>.*?) • (?P<views>.*?) • (?P<favourites>.*?))</div>.*?</div><div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<zasedba>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>.*?</div></article>
+
+vsebina bloka s poim grupami
+<span class=\"xBwRG .*? HtKJn\">(?P<tezavnost>.*?)</span>.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<naslov>.*?)</h2>.*?<div class=\"djeI8\"><.*?>(?P<avtor>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">((?P<parts>.*?) • (?P<pages>.*?) • (?P<time>.*?) • (?P<date>.*?) • (?P<views>.*?) • (?P<favourites>.*?))</div>.*?</div><div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<zasedba>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>
+
+blok javna domena 
+<span class=\"xBwRG o1QE0 HtKJn cPGYN\">(.*?)</span>
