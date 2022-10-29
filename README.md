@@ -22,5 +22,3 @@ V nalogi me bo zanimalo:
 * Ali kateri od avtorjev / žanrov posebej izstopa?
 * Katera od težavnosti je najbolj zastopana?
 Poleg tega bom pozorna tudi na možne povezave med parametri.
-
-testtesttest
