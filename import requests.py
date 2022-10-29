@@ -163,7 +163,10 @@ def main(redownload=True, reparse=True):
     #save_frontpage(frontpage, directory_music, frontpage_filename)
 
     # Iz lokalne (html) datoteke preberemo podatke
-    bloki = page_to_entry(read_file_to_string(directory_music, frontpage_filename))
+    #Iz nekega razloga vse lepo dela ko html skopiram na roke, koda v naslednji vrstici
+    #bloki = page_to_entry(read_file_to_string(directory_music, "skopiran_html.html"))
+    #NE DELA PA:
+    #bloki = page_to_entry(read_file_to_string(directory_music, frontpage_filename))
 
     # Podatke preberemo v lepšo obliko (seznam slovarjev)
     bloki_lepse = [get_dict_from_block(blok) for blok in bloki]
