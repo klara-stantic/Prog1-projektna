@@ -1,7 +1,13 @@
-import requests
 import re
 import os
 import csv
+import requests_html
+import requests
+
+from requests_html import HTML, HTMLSession
+
+
+session = requests_html.HTMLSession()
 
 ###############################################################################
 # STAGE 1: Definicija pomoznih orodij
@@ -14,6 +20,7 @@ frontpage = 'https://musescore.com/sheetmusic'
 directory_music = 'music'
 # ime datoteke v katero bomo shranili glavno stran
 frontpage_filename = 'sheet_music_frontpage.html'
+fixed_frontpage = "sheet_music_html.html"
 # ime CSV datoteke v katero bomo shranili podatke
 csv_filename = 'music.csv'
 
@@ -24,18 +31,45 @@ def download_url_to_string(url):
     """
     try:
         # del kode, ki morda sproži napako
-        r = requests.get(url)
-    except requests.exceptions.ConnectionError:
+        r = session.get(url)
+    except requests_html.exceptions.ConnectionError:
         # koda, ki se izvede pri napaki
         # dovolj je če izpišemo opozorilo in prekinemo izvajanje funkcije
         print("Napaka pri povezovanju do:", url)
         return None
     # nadaljujemo s kodo če ni prišlo do napake
     if r.status_code == requests.codes.ok:
-        return r.text
+        popravek = r.html.render()
+        return popravek.text
     else:
         print("Napaka pri prenosu strani:", url)
         return None
+
+#Uporaba request.get ne da želenega rezultata. Dobim le ogrodje strani, ki pa ne vsebuje vnosov.
+#Internet pravi, da je to zato, ker se stran nalaga prejo JavaScript funkcij in 
+#zato, ko jih "requestam", podatkov ni na pričakovanem mestu.
+#Kar ta funkcija da je shranjeno v sheet_music_filename_napacno
+#REŠITEV: predlagana je knjižnjica requests_html oz python selenium
+
+#def download_url_to_string(url):
+#    try:
+#        #del kode, ki morda sprozi napako
+#        with open(url) as html_file:
+#            source = html_file.read()
+#            r = requests_html.HTML(html=source)
+#            r.render()
+#    except requests.exceptions.ConnectionError:
+#        #koda, ki se izvede pri napaki
+#        print("Napaka pri povezovanju do:", url)
+#        return None
+#    if r.status_code == requests.codes.ok:
+#        return r.text
+#    else:
+#        print("Napaka pri prenosu strani:", url)
+#        return None
+
+# Po delu z omenjeno knjižnjico sem ugotovila, 
+# da bi lahko z render metodo popravila html datoteko, ki mi jo je generirala prvotna funkcija.
 
 
 def save_string_to_file(text, directory, filename):
@@ -49,11 +83,20 @@ def save_string_to_file(text, directory, filename):
         file_out.write(text)
     return None
 
-
 def save_frontpage(url, directory, filename):
     """Funkcija prenese glavno stran in jo shrani v datoteko"""
     text = download_url_to_string(url)
     save_string_to_file(text, directory, filename)
+    return None    
+
+def rendering(filename, dir, fix):
+    path = os.path.join(dir, filename)
+    with open(path, "r+", encoding="utf8") as html_file:
+        source = html_file.read()
+        r = HTML(html=source)
+        r.render()
+        html = r.html
+        save_string_to_file(html, directory_music, fix)
     return None
 
 ###############################################################################
@@ -162,11 +205,14 @@ def main(redownload=True, reparse=True):
     # Najprej v lokalno datoteko shranimo glavno stran
     #save_frontpage(frontpage, directory_music, frontpage_filename)
 
+    #izvedemo rednering
+    rendering(frontpage_filename, directory_music, fixed_frontpage)
+
     # Iz lokalne (html) datoteke preberemo podatke
     #Iz nekega razloga vse lepo dela ko html skopiram na roke, koda v naslednji vrstici
     #bloki = page_to_entry(read_file_to_string(directory_music, "skopiran_html.html"))
     #NE DELA PA:
-    #bloki = page_to_entry(read_file_to_string(directory_music, frontpage_filename))
+    bloki = page_to_entry(read_file_to_string(directory_music, fixed_frontpage))
 
     # Podatke preberemo v lepšo obliko (seznam slovarjev)
     bloki_lepse = [get_dict_from_block(blok) for blok in bloki]
