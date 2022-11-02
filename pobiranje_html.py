@@ -1,17 +1,11 @@
-import re
-import os
 import csv
-import requests_html
+import json
+import os
 import requests
+import sys
+import requests_html
+import re
 
-from requests_html import HTML, HTMLSession
-
-
-session = requests_html.HTMLSession()
-
-###############################################################################
-# STAGE 1: Definicija pomoznih orodij
-###############################################################################
 
 # URL glavne strani 
 frontpage = 'https://musescore.com/sheetmusic'
@@ -20,84 +14,38 @@ frontpage = 'https://musescore.com/sheetmusic'
 directory_music = 'music'
 # ime datoteke v katero bomo shranili glavno stran
 frontpage_filename = 'sheet_music_frontpage.html'
-fixed_frontpage = "sheet_music_html.html"
+# ime datoteke s pognanim javascript delom
+frontpage_fixed = "fixed_music.html"
 # ime CSV datoteke v katero bomo shranili podatke
 csv_filename = 'music.csv'
 
+session = requests_html.HTMLSession()
 
-def download_url_to_string(url):
-    """Funkcija kot argument sprejme niz in poskusi vrniti vsebino te spletne
-    strani kot niz. V primeru, da med izvajanje pride do napake vrne None.
-    """
+
+def pripravi_imenik(dir):
+    '''Če še ne obstaja, pripravi prazen imenik za dano datoteko.'''
+    imenik = os.path.dirname(dir)
+    if imenik:
+        os.makedirs(imenik, exist_ok=True)
+
+def shrani_spletno_stran(url, ime_datoteke, dir, vsili_prenos=False):
+    '''Vsebino strani na danem naslovu shrani v datoteko z danim imenom.'''
     try:
-        # del kode, ki morda sproži napako
+        print(f'Shranjujem {url} ...', end='')
+        sys.stdout.flush()
+        if os.path.isfile(ime_datoteke) and not vsili_prenos:
+            print('shranjeno že od prej!')
+            return
         r = session.get(url)
-    except requests_html.exceptions.ConnectionError:
-        # koda, ki se izvede pri napaki
-        # dovolj je če izpišemo opozorilo in prekinemo izvajanje funkcije
-        print("Napaka pri povezovanju do:", url)
-        return None
-    # nadaljujemo s kodo če ni prišlo do napake
-    if r.status_code == requests.codes.ok:
-        popravek = r.html.render()
-        return popravek.text
+        r.html.render()
+    except requests.exceptions.ConnectionError:
+        print('stran ne obstaja!')
     else:
-        print("Napaka pri prenosu strani:", url)
-        return None
-
-#Uporaba request.get ne da želenega rezultata. Dobim le ogrodje strani, ki pa ne vsebuje vnosov.
-#Internet pravi, da je to zato, ker se stran nalaga prejo JavaScript funkcij in 
-#zato, ko jih "requestam", podatkov ni na pričakovanem mestu.
-#Kar ta funkcija da je shranjeno v sheet_music_filename_napacno
-#REŠITEV: predlagana je knjižnjica requests_html oz python selenium
-
-#def download_url_to_string(url):
-#    try:
-#        #del kode, ki morda sprozi napako
-#        with open(url) as html_file:
-#            source = html_file.read()
-#            r = requests_html.HTML(html=source)
-#            r.render()
-#    except requests.exceptions.ConnectionError:
-#        #koda, ki se izvede pri napaki
-#        print("Napaka pri povezovanju do:", url)
-#        return None
-#    if r.status_code == requests.codes.ok:
-#        return r.text
-#    else:
-#        print("Napaka pri prenosu strani:", url)
-#        return None
-
-# Po delu z omenjeno knjižnjico sem ugotovila, 
-# da bi lahko z render metodo popravila html datoteko, ki mi jo je generirala prvotna funkcija.
-
-
-def save_string_to_file(text, directory, filename):
-    """Funkcija zapiše vrednost parametra "text" v novo ustvarjeno datoteko
-    locirano v "directory"/"filename", ali povozi obstoječo. V primeru, da je
-    niz "directory" prazen datoteko ustvari v trenutni mapi.
-    """
-    os.makedirs(directory, exist_ok=True)
-    path = os.path.join(directory, filename)
-    with open(path, 'w', encoding='utf-8') as file_out:
-        file_out.write(text)
-    return None
-
-def save_frontpage(url, directory, filename):
-    """Funkcija prenese glavno stran in jo shrani v datoteko"""
-    text = download_url_to_string(url)
-    save_string_to_file(text, directory, filename)
-    return None    
-
-def rendering(filename, dir, fix):
-    path = os.path.join(dir, filename)
-    with open(path, "r+", encoding="utf8") as html_file:
-        source = html_file.read()
-        r = HTML(html=source)
-        r.render()
-        html = r.html
-        save_string_to_file(html, directory_music, fix)
-    return None
+        pripravi_imenik(dir)
+        path = os.path.join(dir, ime_datoteke)
+        with open(path, 'w', encoding='utf-8') as datoteka:
+            datoteka.write(r.html.html)
+            print('shranjeno!')
 
 ###############################################################################
 # STAGE 2: Obdelava podatkov
@@ -194,36 +142,18 @@ def write_bloki_to_csv(bloki, directory, filename):
     write_csv(bloki[0].keys(), bloki, directory, filename)
 
 
-# Celoten program poženemo v glavni funkciji
-
 def main(redownload=True, reparse=True):
-    """Funkcija izvede celoten del pridobivanja podatkov:
-    1. Oglase prenese iz bolhe
-    2. Lokalno html datoteko pretvori v lepšo predstavitev podatkov
-    3. Podatke shrani v csv datoteko
-    """
-    # Najprej v lokalno datoteko shranimo glavno stran
-    #save_frontpage(frontpage, directory_music, frontpage_filename)
-
-    #izvedemo rednering
-    rendering(frontpage_filename, directory_music, fixed_frontpage)
+    # Vsebino spletne strani shranimo v tekstovno datoteko
+    shrani_spletno_stran(frontpage, frontpage_filename, directory_music)
 
     # Iz lokalne (html) datoteke preberemo podatke
-    #Iz nekega razloga vse lepo dela ko html skopiram na roke, koda v naslednji vrstici
-    #bloki = page_to_entry(read_file_to_string(directory_music, "skopiran_html.html"))
-    #NE DELA PA:
-    bloki = page_to_entry(read_file_to_string(directory_music, fixed_frontpage))
+    bloki = page_to_entry(read_file_to_string(directory_music, frontpage_filename))
 
     # Podatke preberemo v lepšo obliko (seznam slovarjev)
     bloki_lepse = [get_dict_from_block(blok) for blok in bloki]
 
     # Podatke shranimo v csv datoteko
     write_bloki_to_csv(bloki_lepse, directory_music, csv_filename)
-
-    # Dodatno: S pomočjo parametrov funkcije main omogoči nadzor, ali se
-    # celotna spletna stran ob vsakem zagon prenese (četudi že obstaja)
-    # in enako za pretvorbo
-
 
 if __name__ == '__main__':
     main()
