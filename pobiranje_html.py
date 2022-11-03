@@ -9,18 +9,12 @@ import re
 
 # URL glavne strani 
 frontpage = 'https://musescore.com/sheetmusic'
-#https://musescore.com/sheetmusic?page=2
 # mapa, v katero bomo shranili podatke
 directory_music = 'music'
-# ime datoteke v katero bomo shranili glavno stran
-frontpage_filename = 'sheet_music_frontpage.html'
-# ime datoteke s pognanim javascript delom
-frontpage_fixed = "fixed_music.html"
-# ime CSV datoteke v katero bomo shranili podatke
-csv_filename = 'music.csv'
 
 session = requests_html.HTMLSession()
 
+ST_STRANI = 50
 
 def pripravi_imenik(dir):
     '''Če še ne obstaja, pripravi prazen imenik za dano datoteko.'''
@@ -37,7 +31,7 @@ def shrani_spletno_stran(url, ime_datoteke, dir, vsili_prenos=False):
             print('shranjeno že od prej!')
             return
         r = session.get(url)
-        r.html.render()
+        r.html.render(timeout=20)
     except requests.exceptions.ConnectionError:
         print('stran ne obstaja!')
     else:
@@ -70,9 +64,11 @@ def page_to_entry(page_content):
     entries = re.findall(rx, page_content)
     return entries
 
-blok_razrezan_reg = r"<span class=\"xBwRG .*? HtKJn\">(?P<tezavnost>.*?)</span>.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<naslov>.*?)</h2>.*?<div class=\"djeI8\"><.*?>(?P<avtor>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">((?P<parts>.*?) • (?P<pages>.*?) • (?P<time>.*?) • (?P<date>.*?) • (?P<views>.*?) • (?P<favourites>.*?))</div>.*?</div><div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<zasedba>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>"
+blok_razrezan_reg = r'<a href=\"(?P<link>.*?)\">.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<naslov>.*?)</h2>.*?<a class=\"neR_p.*?\">(?P<avtor>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">(?P<deli>.*?) parts? • (?P<strani>.*?) pages? • (?P<time>.*?) • (?P<datum>.*?) • (?P<ogledi>.*?) views • (?P<najljubse>.*?) favorites</div>.*?<div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<zasedba>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>.'
 
-public_domain_reg = r"<span class=\"xBwRG o1QE0 HtKJn cPGYN\">(.*?)</span>"
+public_domain_reg = r'<span class=\"xBwRG o1QE0 HtKJn cPGYN\">(.*?)</span>'
+
+tezavnost_reg = r'<span class=\"xBwRG .*? HtKJn\">(?P<tezavnost>.*?)</span>'
 
 def get_dict_from_block(block):
     """Funkcija iz niza za posamezen vnos izlušči podatke, 
@@ -84,13 +80,21 @@ def get_dict_from_block(block):
     blok_dict = data.groupdict()
 
     # Ker niso vsi vnosi v javni rabi, to rešimo z dodatnim vzorcem
-    rloc = re.compile(public_domain_reg)
+    rloc = re.compile(public_domain_reg, 
+                      re.DOTALL)
     locdata = re.search(rloc, block)
     if locdata is not None:
         blok_dict['javna domena'] = "DA"
     else:
         blok_dict['javna domena'] = 'NE'
-
+    #podobno za tezavnost
+    rdiff = re.compile(tezavnost_reg, 
+                       re.DOTALL)
+    diffdata = re.search(rdiff, block)
+    if diffdata is not None:
+        blok_dict['tezavnost'] = diffdata.group('tezavnost')
+    else:
+        blok_dict['tezavnost'] = 'NoData'
     return blok_dict
 
 
@@ -102,9 +106,6 @@ def blocks_from_file(filename, directory):
     bloki = [get_dict_from_block(block) for block in blocks]
     return bloki
 
-
-def bloki_frontpage(directory):
-    return blocks_from_file(directory, frontpage_filename)
 
 ###############################################################################
 # STAGE 3: Shranjevanje podatkov 
@@ -141,19 +142,24 @@ def write_bloki_to_csv(bloki, directory, filename):
     assert bloki and (all(j.keys() == bloki[0].keys() for j in bloki))
     write_csv(bloki[0].keys(), bloki, directory, filename)
 
-
 def main(redownload=True, reparse=True):
-    # Vsebino spletne strani shranimo v tekstovno datoteko
-    shrani_spletno_stran(frontpage, frontpage_filename, directory_music)
+    for stran in range(ST_STRANI):
+        page = stran + 1
+        url = f'https://musescore.com/sheetmusic?page={page}'
+        datoteka = f'music_{page}.html' 
+        csv_filename = f'music_csv_{page}'
 
-    # Iz lokalne (html) datoteke preberemo podatke
-    bloki = page_to_entry(read_file_to_string(directory_music, frontpage_filename))
+        # Vsebino spletne strani shranimo v tekstovno datoteko
+        shrani_spletno_stran(url, datoteka, directory_music)
 
-    # Podatke preberemo v lepšo obliko (seznam slovarjev)
-    bloki_lepse = [get_dict_from_block(blok) for blok in bloki]
+        # Iz lokalne (html) datoteke preberemo podatke
+        bloki = page_to_entry(read_file_to_string(directory_music, datoteka))
 
-    # Podatke shranimo v csv datoteko
-    write_bloki_to_csv(bloki_lepse, directory_music, csv_filename)
+        # Podatke preberemo v lepšo obliko (seznam slovarjev)
+        bloki_lepse = [get_dict_from_block(blok) for blok in bloki]
+
+        # Podatke shranimo v csv datoteko
+        write_bloki_to_csv(bloki_lepse, directory_music, csv_filename)
 
 if __name__ == '__main__':
     main()
