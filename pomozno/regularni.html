@@ -12,7 +12,12 @@ razrezan blok s poimenovanimi grupami
 <article class=\"c9ju0 J5IQp mX2qa\">.*?<span class=\"xBwRG .*? HtKJn\">(?P<tezavnost>.*?)</span>.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<naslov>.*?)</h2>.*?<div class=\"djeI8\"><.*?>(?P<avtor>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">((?P<parts>.*?) • (?P<pages>.*?) • (?P<time>.*?) • (?P<date>.*?) • (?P<views>.*?) • (?P<favourites>.*?))</div>.*?</div><div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<zasedba>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>.*?</div></article>
 
 vsebina bloka s poim grupami
-<span class=\"xBwRG .*? HtKJn\">(?P<tezavnost>.*?)</span>.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<naslov>.*?)</h2>.*?<div class=\"djeI8\"><.*?>(?P<avtor>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">((?P<parts>.*?) • (?P<pages>.*?) • (?P<time>.*?) • (?P<date>.*?) • (?P<views>.*?) • (?P<favourites>.*?))</div>.*?</div><div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<zasedba>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>
+<article class=\"c9ju0 J5IQp mX2qa\">.*?<a href=\"(?P<link>.*?)\">.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<naslov>.*?)</h2>.*?<div class=\"djeI8\"><.*?>(?P<avtor>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">((?P<parts>.*?) • (?P<pages>.*?) • (?P<time>.*?) • (?P<date>.*?) • (?P<views>.*?) • (?P<favourites>.*?))</div>.*?</div><div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<zasedba>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>
+
+<article class=\"c9ju0 J5IQp mX2qa\">.*?<a href=\"(?P<link>.*?)\">.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<naslov>.*?)</h2>.*?<a class=\"neR_p.*?\">(?P<avtor>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">(?P<deli>.*?) parts? • (?P<strani>.*?) pages? • (?P<time>.*?) • (?P<datum>.*?) • (?P<ogledi>.*?) views • (?P<najljubse>.*?) favorites</div>.*?<div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<zasedba>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>.*?</div></article>
 
 blok javna domena 
 <span class=\"xBwRG o1QE0 HtKJn cPGYN\">(.*?)</span>
+
+blok tezavnost
+<span class=\"xBwRG .*? HtKJn\">(?P<tezavnost>.*?)</span>
