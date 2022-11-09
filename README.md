@@ -9,7 +9,7 @@ Za posamezen vnos me bodo zanimali naslednji podatki:
 * Naslov in avtor skladbe
 * Naslov in avtor originala
 * Datum objave
-* Tonaliteta, predvideno trajanje
+* Tonaliteta
 * Mesto na seznamu 
 * Koliko delov, strani, itd. ima skladba
 * Koliko "všečkov" ima vnos
