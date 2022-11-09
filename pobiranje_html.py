@@ -14,13 +14,18 @@ directory_music = 'music'
 
 session = requests_html.HTMLSession()
 
-ST_STRANI = 50
+ST_STRANI = 1
+VNOSI_NA_STRAN = 20
 
 def pripravi_imenik(dir):
     '''Če še ne obstaja, pripravi prazen imenik za dano datoteko.'''
     imenik = os.path.dirname(dir)
     if imenik:
         os.makedirs(imenik, exist_ok=True)
+
+# spletna stran, iz katere pobiram podatke, je generirana preko Java Script skripte,
+# zato sem namesto knjižnjice requests uporabila requests-html, 
+# ki omogoči, da skripto zaženem pred pobiranjem strani, in tako pridobim celoten html.
 
 def shrani_spletno_stran(url, ime_datoteke, dir, vsili_prenos=False):
     '''Vsebino strani na danem naslovu shrani v datoteko z danim imenom.'''
@@ -64,11 +69,16 @@ def page_to_entry(page_content):
     entries = re.findall(rx, page_content)
     return entries
 
-blok_razrezan_reg = r'<a href=\"(?P<link>.*?)\">.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<naslov>.*?)</h2>.*?<a class=\"neR_p.*?\">(?P<avtor>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">(?P<deli>.*?) parts? • (?P<strani>.*?) pages? • (?P<time>.*?) • (?P<datum>.*?) • (?P<ogledi>.*?) views • (?P<najljubse>.*?) favorites</div>.*?<div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<zasedba>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>.'
+
+blok_razrezan_reg = r'<a href=\"(?P<link>.*?)\">.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<title>.*?)</h2>.*?<a class=\"neR_p.*?\">(?P<user>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">(?P<parts>.*?) parts? • (?P<pages>.*?) pages? • (?:.*?) • (?P<date>.*?) • (?P<views>.*?) views • (?P<favorites>.*?) favorites</div>.*?<div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<ensemble>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>.'
 
 public_domain_reg = r'<span class=\"xBwRG o1QE0 HtKJn cPGYN\">(.*?)</span>'
 
 tezavnost_reg = r'<span class=\"xBwRG .*? HtKJn\">(?P<tezavnost>.*?)</span>'
+
+original = r'<section class=\"ASx44 AJXCt Bz0hi g1QZl\">.*?<a clas.*?>(?P<original_title>.*?)</a>.*?<a class.*?>(?P<original_author>.*?)</a>.*?</section>'
+
+tabela = r'<tbody>.*?Duration.*?<div class=\"C4LKv V4kyC N30cN\">(?P<duration>.*?)</div>.*?Key.*?<div class=\"C4LKv V4kyC N30cN\">(?P<key>.*?)</div>.*?(?P<genre>Genre.*?(?:,? ?<a class=.*?>\w*?)</a>.*?</div></td>).*?</table>'
 
 def get_dict_from_block(block):
     """Funkcija iz niza za posamezen vnos izlušči podatke, 
@@ -78,6 +88,32 @@ def get_dict_from_block(block):
                     re.DOTALL)
     data = re.search(rx, block)
     blok_dict = data.groupdict()
+    
+    # pri vnosih nas zanimajo dodatne informacije, ki jih dobimo preko linka 
+    # datoteka podstran je samo pomožna, za to nas ne skrbi, če jo po uporavi za en vnos
+    # zbrišemo in shranimo noter nov zapis. To je tudi malo bolj prijazno iz vidika količine podatkov, 
+    # shranjenih v mape
+    link = blok_dict["link"]
+    shrani_spletno_stran(link, "podstran", "music")
+    vsebina = read_file_to_string("music", "podstran")
+    # podatki o originalu
+    rorig = re.compile(original, 
+                       re.DOTALL)
+    origdata = re.search(rorig, vsebina)
+    blok_dict["original_author"] = origdata.group('original_author')
+    blok_dict["original_title"] = origdata.group('original_title')
+    # podatki iz tabele
+    rtable = re.compile(tabela, 
+                        re.DOTALL)
+    tabledata = re.search(rtable, vsebina)
+    blok_dict["duration"] = tabledata.group('duration')
+    blok_dict["key"] = tabledata.group('key')
+    # včasih je žanrov več, zato iščemo znotraj širšega bloka za žanr
+    genre_all = tabledata.group('genre')
+    genre_one = re.compile(r'<a class=.*?>(\w*?)</a>',
+                           re.DOTALL)
+    genredata = re.findall(genre_one, genre_all)
+    blok_dict['genre'] = genredata
 
     # Ker niso vsi vnosi v javni rabi, to rešimo z dodatnim vzorcem
     rloc = re.compile(public_domain_reg, 
@@ -106,7 +142,6 @@ def blocks_from_file(filename, directory):
     bloki = [get_dict_from_block(block) for block in blocks]
     return bloki
 
-
 ###############################################################################
 # STAGE 3: Shranjevanje podatkov 
 ################################################################################
@@ -125,11 +160,6 @@ def write_csv(fieldnames, rows, directory, filename):
         for row in rows:
             writer.writerow(row)
     return None
-
-# Definirajte funkcijo, ki sprejme neprazen seznam slovarjev, ki predstavljajo
-# podatke iz oglasa mačke, in zapiše vse podatke v csv datoteko. Imena za
-# stolpce [fieldnames] pridobite iz slovarjev.
-
 
 def write_bloki_to_csv(bloki, directory, filename):
     """Funkcija vse podatke iz parametra "bloki" zapiše v csv datoteko podano s
