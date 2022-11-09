@@ -26,3 +26,8 @@ V nalogi me bo zanimalo:
 * Ali kateri od avtorjev / žanrov posebej izstopa?
 * Katera od težavnosti je najbolj zastopana?
 Poleg tega bom pozorna tudi na možne povezave med parametri.
+
+OPOMBA
+Ker so datoteke s shranjenimi podatki velike, in 
+jih lahko vedno pridobimo tako, da poženemo skripto 'pobiranje_html.py', 
+so naloženi le vzorčni podatki iz prve strani. Za vse ostale strani je postopek pridobivanja popolnoma enak.
