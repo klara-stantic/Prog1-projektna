@@ -1,0 +1,244 @@
+import csv
+import json
+import os
+import requests
+import sys
+import requests_html
+import re
+import pandas as pd
+
+
+session = requests_html.HTMLSession()
+
+ST_STRANI = 1
+VNOSI_NA_STRAN = 20
+
+###############################################################################
+# STAGE 1: Orodja
+###############################################################################
+
+
+def pripravi_imenik(dir):
+    '''Če še ne obstaja, pripravi prazen imenik za dano datoteko.'''
+    imenik = os.path.dirname(dir)
+    if imenik:
+        os.makedirs(imenik, exist_ok=True)
+
+# spletna stran, iz katere pobiram podatke, je generirana preko Java Script skripte,
+# zato sem namesto knjižnjice requests uporabila requests-html,
+# ki omogoči, da skripto zaženem pred pobiranjem strani, in tako pridobim celoten html.
+
+
+def shrani_spletno_stran(url, ime_datoteke, dir, vsili_prenos=False):
+    '''Vsebino strani na danem naslovu shrani v datoteko z danim imenom.'''
+    try:
+        print(f'Shranjujem {url} ...', end='')
+        sys.stdout.flush()
+        if os.path.isfile(ime_datoteke) and not vsili_prenos:
+            print('shranjeno že od prej!')
+            return
+        r = session.get(url, timeout=5)
+        r.html.render(timeout=20)
+    except requests.exceptions.ConnectionError:
+        print('stran ne obstaja!')
+    else:
+        pripravi_imenik(dir)
+        path = os.path.join(dir, ime_datoteke)
+        with open(path, 'w', encoding='utf-8') as datoteka:
+            datoteka.write(r.html.html)
+            print('shranjeno!')
+
+
+def read_file_to_string(directory, filename):
+    """Funkcija vrne celotno vsebino datoteke "directory"/"filename" kot niz"""
+    path = os.path.join(directory, filename)
+    with open(path, 'r', encoding='utf-8') as file_in:
+        return file_in.read()
+
+
+def write_csv(slovarji, field_names, filename):
+    '''Iz seznama slovarjev ustvari CSV datoteko z glavo.'''
+    pripravi_imenik(filename)
+    with open(filename, 'w', encoding='utf-8') as csv_datoteka:
+        writer = csv.DictWriter(csv_datoteka, fieldnames=field_names)
+        writer.writeheader()
+        writer.writerows(slovarji)
+
+
+def write_json(objekt, filename):
+    '''Iz danega objekta ustvari JSON datoteko.'''
+    pripravi_imenik(filename)
+    with open(filename, 'w', encoding='utf-8') as json_datoteka:
+        json.dump(objekt, json_datoteka, indent=4, ensure_ascii=False)
+
+###############################################################################
+# STAGE 2: Priprava vzorcev
+###############################################################################
+
+
+blok_regular = re.compile(
+    r"<article class=\"c9ju0 J5IQp mX2qa\">(.*?)</div></article>",
+    flags=re.DOTALL
+)
+
+blok_razrezan_reg = re.compile(
+    r'<a class=\"xrntp HFvdW Dhs0s O9yD2 oB350 u_VDg\" href=\"(?P<link>https://musescore\.com/user/(?P<user_id>.*?)/scores/(?P<music_id>.*?))\"><h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<title>.*?)</h2>.*?<a class=\"neR_p.*?\">(?P<user>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">(?P<parts>.*?) parts? • (?P<pages>.*?) pages? • (?:.*?) • (?P<date>.*?) • (?P<views>.*?) views • (?P<favorites>.*?) favorites</div>.*?<div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<ensemble>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>.',
+    flags=re.DOTALL
+)
+
+public_domain_reg = re.compile(
+
+    r'<span class=\"xBwRG o1QE0 HtKJn cPGYN\">(.*?)</span>',
+    flags=re.DOTALL
+)
+
+tezavnost_reg = re.compile(
+
+    r'<span class=\"xBwRG .*? HtKJn\">(?P<difficulty>.*?)</span>',
+    flags=re.DOTALL
+)
+
+original = re.compile(
+
+    r'<section class=\"ASx44 AJXCt Bz0hi g1QZl\">.*?<a clas.*?>(?P<original_title>.*?)</a>.*?<a class.*?>(?P<original_author>.*?)</a>.*?</section>',
+    flags=re.DOTALL
+)
+
+tabela = re.compile(
+    r'<tbody>.*?Duration.*?<div class=\"C4LKv V4kyC N30cN\">(?P<duration>.*?)</div>.*?Key.*?<div class=\"C4LKv V4kyC N30cN\">(?P<key>.*?)</div>.*?(?P<genre>Genre.*?(?:,? ?<a class=.*?>\w*?)</a>.*?</div></td>).*?</table>',
+    flags=re.DOTALL
+)
+
+genre_reg = re.compile(
+    r'<a class=\"HFvdW Dhs0s O9yD2 Cl2SE u_VDg\" href=\".*?\">(?P<genre_name>.*?)</a>',
+    flags=re.DOTALL
+)
+
+
+link = re.compile(
+
+    r'<a class=\"xrntp HFvdW Dhs0s O9yD2 oB350 u_VDg\" href=\"(?P<link>.*?)\">',
+    flags=re.DOTALL
+)
+
+###############################################################################
+# STAGE 3: Obravnava naših vzorcev
+###############################################################################
+
+
+def data_finder(blok):
+    """Funkcija iz niza za posamezen vnos izlušči podatke, 
+    ki nas o njem zanimajo, ter vrne slovar, ki vsebuje ustrezne
+    podatke"""
+    music = blok_razrezan_reg.search(blok).groupdict()
+    music['user_id'] = int(music['user_id'])
+    music['music_id'] = int(music['music_id'])
+    music['parts'] = int(music['parts'])
+    music['pages'] = int(music['pages'])
+    music['views'] = int(music['views'].replace(",", ""))
+    music['favorites'] = int(music['favorites'].replace(",", ""))
+    music['instrument'] = music['instrument'].strip().split(', ')
+    # težavnost beležimo, kjer je označena
+    tezavnost = tezavnost_reg.search(blok)
+    if tezavnost:
+        music['difficulty'] = tezavnost['difficulty']
+    else:
+        music['difficulty'] = None
+    # public domain beležimo le tam, kjer je podatek naveden
+    public_domain = public_domain_reg.search(blok)
+    if public_domain:
+        music['public_domain'] = "DA"
+    else:
+        music['public_domain'] = "NE"
+
+    # pri vnosih nas zanimajo dodatne informacije, ki jih dobimo preko linka
+    # datoteka podstran je samo pomožna, za to nas ne skrbi, če jo po uporavi za en vnos
+    # zbrišemo in shranimo noter nov zapis. To je tudi malo bolj prijazno iz vidika količine podatkov,
+    # shranjenih v mape
+    link = music.get("link")
+    shrani_spletno_stran(link, "podstran.html", "music")
+    vsebina = read_file_to_string("music", "podstran.html")
+
+    # podatki o originalu
+    origdata = re.search(original, vsebina)
+    if origdata is not None:
+        music["original_author"] = origdata.group('original_author')
+        music["original_title"] = origdata.group('original_title')
+    else:
+        music["original_author"] = None
+        music["original_title"] = None
+
+    # podatki iz tabele
+    tabledata = re.search(tabela, vsebina)
+    if tabledata is not None:
+        music["key"] = tabledata.group('key').strip().split(', ')
+        # včasih je žanrov več, zato iščemo znotraj širšega bloka za žanr
+        genre_all = tabledata.group('genre')
+        genredata = re.findall(genre_reg, genre_all)
+        music['genre'] = genredata
+        music['duration'] = tabledata.group('duration')
+    else:
+        music["key"] = []
+        music['genre'] = []
+        music['duration'] = None
+
+    return music
+
+
+def najdi_posamezne(st_strani):
+    url = (
+        f'https://musescore.com/sheetmusic?page={st_strani}'
+    )
+    ime_datoteke = 'music-{}.html'.format(st_strani)
+    shrani_spletno_stran(url, ime_datoteke, "music")
+    vsebina = read_file_to_string("music", ime_datoteke)
+    bloki = blok_regular.finditer(vsebina)
+    for blok in bloki:
+        yield data_finder(blok.group(0))
+
+
+def izloci_gnezdene_podatke(all_music):
+    avtorji, genres, users = [], [], []
+    videni_avtorji = set()
+    videni_uporabniki = set()
+
+    def dodaj_user(id, name):
+        if id not in videni_uporabniki:
+            videni_uporabniki.add(id)
+            users.append({'id': id, 'name': name})
+
+    def dodaj_avtor(name, title):
+        if name not in videni_avtorji:
+            videni_avtorji.add(name)
+            avtorji.append({'name': name, 'original_title': title})
+
+    for music in all_music:
+        dodaj_user(music.pop('user_id'), music.pop('user'))
+        if music['original_author'] is not None:
+            dodaj_avtor(music.pop('original_author'), music.pop('original_title'))
+        else: pass
+        for genre in music.pop('genre'):
+            genres.append(
+                {'music_id': music['music_id'], 'title': music['title'], 'genre': genre})
+
+    avtorji.sort(key=lambda avtor: (avtor['name'], avtor['original_title']))
+    users.sort(key=lambda user: (user['id'], user['name']))
+    genres.sort(key=lambda genre: (
+        genre['music_id'], genre['title'], genre['genre']))
+
+    return avtorji, users, genres
+
+
+all_music = []
+for st_strani in range(1, ST_STRANI + 1):
+    for music in najdi_posamezne(st_strani):
+        all_music.append(music)
+all_music.sort(key=lambda music: music['music_id'])
+write_json(all_music, 'obdelani-podatki/all_music.json')
+osebe, vloge, genres = izloci_gnezdene_podatke(all_music)
+write_csv(
+    all_music,
+    ['music_id', 'user_id', 'title', 'ensemble', 'instrument', 'genre', 'key', 'date', 'duration',
+        'original_author', 'original_title', 'public_domain', 'favorites', 'difficulty', 'pages', 'views', 'parts', 'link'], 'obdelani-podatki/all_music.csv'
+)
+write_csv(genres, ['music_id', 'title', 'genre'], 'obdelani-podatki/genres.csv')
