@@ -29,4 +29,4 @@ Poleg tega bom pozorna tudi na možne povezave med parametri.
 OPOMBA
 Ker so datoteke s shranjenimi podatki velike, in 
 jih lahko vedno pridobimo tako, da poženemo skripto 'poberi_podatke.py', 
-so naloženi le vzorčni podatki iz prve strani. Za vse ostale strani je postopek pridobivanja popolnoma enak.
+so naloženi le vzorčni podatki iz prvih dveh strani. Za vse ostale strani je postopek pridobivanja popolnoma enak.
