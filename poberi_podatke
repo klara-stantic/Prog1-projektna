@@ -10,7 +10,7 @@ import pandas as pd
 
 session = requests_html.HTMLSession()
 
-ST_STRANI = 2
+ST_STRANI = 50
 VNOSI_NA_STRAN = 20
 
 ###############################################################################
@@ -205,7 +205,7 @@ def izloci_gnezdene_podatke(all_music):
     def dodaj_user(id, name):
         if id not in videni_uporabniki:
             videni_uporabniki.add(id)
-            users.append({'id': id, 'name': name})
+            users.append({'user_id': id, 'user': name})
 
     def dodaj_avtor(name, title):
         if name not in videni_avtorji:
@@ -222,7 +222,7 @@ def izloci_gnezdene_podatke(all_music):
                 {'music_id': music['music_id'], 'title': music['title'], 'genre': genre})
 
     avtorji.sort(key=lambda avtor: (avtor['name'], avtor['original_title']))
-    users.sort(key=lambda user: (user['id'], user['name']))
+    users.sort(key=lambda user: (user['user_id'], user['user']))
     genres.sort(key=lambda genre: (
         genre['music_id'], genre['title'], genre['genre']))
 
