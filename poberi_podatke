@@ -122,7 +122,7 @@ link = re.compile(
 )
 
 ###############################################################################
-# STAGE 3: Obravnava naših vzorcev
+# STAGE 3: Iskanje podatkov
 ###############################################################################
 
 
@@ -198,6 +198,8 @@ def najdi_posamezne(st_strani):
 
 
 def izloci_gnezdene_podatke(all_music):
+    #Poleg glavnega sklopa podatkov želimo še nekaj posebnih tabel, 
+    #ki nam bodo olajšale delo pri analizi podatkov
     avtorji, genres, users = [], [], []
     videni_avtorji = set()
     videni_uporabniki = set()
@@ -207,24 +209,25 @@ def izloci_gnezdene_podatke(all_music):
             videni_uporabniki.add(id)
             users.append({'user_id': id, 'user': name})
 
-    def dodaj_avtor(name, title):
+    def dodaj_avtor(name):
         if name not in videni_avtorji:
             videni_avtorji.add(name)
-            avtorji.append({'name': name, 'original_title': title})
+            count = videni_avtorji.__len__()
+            avtorji.append({'name': name, 'st_skladb': count})
 
     for music in all_music:
         dodaj_user(music.pop('user_id'), music.pop('user'))
         if music['original_author'] is not None:
-            dodaj_avtor(music.pop('original_author'), music.pop('original_title'))
+            dodaj_avtor(music.pop('original_author'))
         else: pass
         for genre in music.pop('genre'):
             genres.append(
-                {'music_id': music['music_id'], 'title': music['title'], 'genre': genre})
+                {'music_id': music['music_id'], 'genre': genre})
 
-    avtorji.sort(key=lambda avtor: (avtor['name'], avtor['original_title']))
+    avtorji.sort(key=lambda avtor: (avtor['name'], avtor['st_skladb']))
     users.sort(key=lambda user: (user['user_id'], user['user']))
     genres.sort(key=lambda genre: (
-        genre['music_id'], genre['title'], genre['genre']))
+        genre['music_id'], genre['genre']))
 
     return avtorji, users, genres
 
@@ -240,6 +243,6 @@ write_csv(
     ['music_id', 'user_id', 'title', 'ensemble', 'instrument', 'genre', 'key', 'date', 'duration',
         'original_author', 'original_title', 'public_domain', 'favorites', 'difficulty', 'pages', 'views', 'parts', 'link'], 'obdelani-podatki/all_music.csv'
 )
-write_csv(genres, ['music_id', 'title', 'genre'], 'obdelani-podatki/genres.csv')
-write_csv(avtorji, ['name', 'original_title'], 'obdelani-podatki/authors.csv'  )
+write_csv(genres, ['music_id', 'genre'], 'obdelani-podatki/genres.csv')
+write_csv(avtorji, ['name', 'st_skladb'], 'obdelani-podatki/authors.csv'  )
 write_csv(users, ['user_id', 'user'], 'obdelani-podatki/users.csv' )
