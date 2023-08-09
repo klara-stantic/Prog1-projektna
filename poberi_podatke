@@ -6,11 +6,12 @@ import sys
 import requests_html
 import re
 import pandas as pd
+import time
 
 
 session = requests_html.HTMLSession()
 
-ST_STRANI = 50
+ST_STRANI = 2
 NA_STRANI = 20
 
 ###############################################################################
@@ -47,6 +48,7 @@ def shrani_spletno_stran(url, ime_datoteke, dir, vsili_prenos=False):
         with open(path, 'w', encoding='utf-8') as datoteka:
             datoteka.write(r.html.html)
             print('shranjeno!')
+        time.sleep(10) # 10 sekund premora
 
 
 def read_file_to_string(directory, filename):
@@ -104,18 +106,27 @@ tezavnost_reg = re.compile(
 )
 
 original = re.compile(
-
-    r'<section class=\"ASx44 AJXCt Bz0hi g1QZl\">.*?<a clas.*?>(?P<original_title>.*?)</a>.*?<a class.*?>(?P<original_author>.*?)</a>.*?</section>',
+    r'<section class=\"ASx44 AJXCt Bz0hi g1QZl\"><h3.*?><a.*?>(?P<original_title>.*?)</a>.*?by <a.*?>(?P<original_author>.*?)</a></h3></section>',
     flags=re.DOTALL
 )
 
-tabela = re.compile(
+tabela_star = re.compile(
     r'<tbody>.*?Duration.*?<div class=\"C4LKv V4kyC N30cN\">(?P<duration>.*?)</div>.*?Key.*?<div class=\"C4LKv V4kyC N30cN\">(?P<key>.*?)</div>.*?(?P<genre>Genre.*?(?:,? ?<a class=.*?>\w*?)</a>.*?</div></td>).*?</table>',
     flags=re.DOTALL
 )
 
-genre_reg = re.compile(
+tabela = re.compile(
+    r'Duration.*?class=\"C4LKv V4kyC N30cN\">(?P<duration>.*?)</div>.*?<h3 class=\"C4LKv V4kyC\">.*?Key</h3>.*?N30cN\">(?P<key>.*?)</div>.*?(?P<genre>Genre.*?</td>).*?',
+    flags=re.DOTALL
+)
+
+genre_reg_star = re.compile(
     r'<a class=\"HFvdW Dhs0s O9yD2 Cl2SE u_VDg\" href=\".*?\">(?P<genre_name>.*?)</a>',
+    flags=re.DOTALL
+)
+
+genre_reg = re.compile(
+    r'u_VDg\">(?P<genre_name>.*?)</a>',
     flags=re.DOTALL
 )
 
@@ -256,7 +267,7 @@ def izloci_gnezdene_podatke(all_music):
             music.pop('original_title')
         for genre in music.pop('genre'):
             genres.append(
-                {'genre': genre, 'music_id': music['music_id']})
+                {'genre': genre.replace('&amp;', '&'), 'music_id': music['music_id']})
             
     #Na koncu tabele še smiselno uredimo
     
@@ -286,5 +297,5 @@ write_csv(
 write_csv(genres, ['genre', 'music_id'], 'obdelani-podatki/genres.csv')
 write_csv(avtorji, ['name'], 'obdelani-podatki/authors.csv'  )
 write_csv(users, ['user_id', 'user'], 'obdelani-podatki/users.csv' )
-write_csv(relations_users, ['music_id', 'user_id'], 'obdelani-podatki/users.csv' )
-write_csv(relations_authors, ['original_author', 'original_title', 'music_id'], 'obdelani-podatki/users.csv' )
+write_csv(relations_users, ['music_id', 'user_id'], 'obdelani-podatki/relacije_users.csv' )
+write_csv(relations_authors, ['original_author', 'original_title', 'music_id'], 'obdelani-podatki/relacije_authors.csv' )
