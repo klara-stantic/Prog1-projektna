@@ -11,7 +11,7 @@ import pandas as pd
 session = requests_html.HTMLSession()
 
 ST_STRANI = 50
-VNOSI_NA_STRAN = 20
+NA_STRANI = 20
 
 ###############################################################################
 # STAGE 1: Orodja
@@ -81,8 +81,13 @@ blok_regular = re.compile(
     flags=re.DOTALL
 )
 
-blok_razrezan_reg = re.compile(
+blok_razrezan_reg_star = re.compile(
     r'<a class=\"xrntp HFvdW Dhs0s O9yD2 oB350 u_VDg\" href=\"(?P<link>https://musescore\.com/user/(?P<user_id>.*?)/scores/(?P<music_id>.*?))\"><h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<title>.*?)</h2>.*?<a class=\"neR_p.*?\">(?P<user>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">(?P<parts>.*?) parts? • (?P<pages>.*?) pages? • (?:.*?) • (?P<date>.*?) • (?P<views>.*?) views • (?P<favorites>.*?) favorites</div>.*?<div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<ensemble>.*?)</div>.*?<div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div>.',
+    flags=re.DOTALL
+)
+
+blok_razrezan_reg = re.compile(
+    r'<div class=\"ksWwy\"><a href=\"(?P<link>https://musescore\.com/user/(?P<user_id>.*?)/scores/(?P<music_id>.*?))\">.*?<h2 class=\"mJ3Cr Ggd5G N30cN gHy59\">(?P<title>.*?)</h2></a><div class=\"djeI8\"><a href=\".*?\" class=\".*?\">(?P<user>.*?)</a>.*?<div class=\"KYeND Mu94Z WJGhZ\">(?P<parts>.*?) parts? • (?P<pages>.*?) pages? • (?:.*?) • (?P<date>.*?) • (?P<views>.*?) views • (?P<favorites>.*?) favorites</div>.*?<div class=\"dEU_I\">(?P<stars>.*?)</div></div><div class=\"CuFrh g82qd\">(?P<votes>.*?) votes</div></section></div><div class=\"C4LKv fLob3 J5IQp DIiWA\">(?P<ensemble>.*?)</div><div class=\"C4LKv B6vE9 DIiWA z99NF\">(?P<instrument>.*?)</div></div>',
     flags=re.DOTALL
 )
 
@@ -114,11 +119,17 @@ genre_reg = re.compile(
     flags=re.DOTALL
 )
 
-
 link = re.compile(
-
     r'<a class=\"xrntp HFvdW Dhs0s O9yD2 oB350 u_VDg\" href=\"(?P<link>.*?)\">',
     flags=re.DOTALL
+)
+
+polna_zvezdica = re.compile(
+    r'QDSJF QLORb R0f8v et8v_', flags=re.DOTALL
+)
+
+pol_zvezdice = re.compile(
+    r'QDSJF LF177 R0f8v et8v_', flags=re.DOTALL
 )
 
 ###############################################################################
@@ -138,6 +149,20 @@ def data_finder(blok):
     music['views'] = int(music['views'].replace(",", ""))
     music['favorites'] = int(music['favorites'].replace(",", ""))
     music['instrument'] = music['instrument'].strip().split(', ')
+    # Štetje zvezdic
+    zvezdice = music['stars']
+    polne_zvezdice_data = len(re.findall(polna_zvezdica, zvezdice))
+    pol_zvezdice_data = len(re.findall(pol_zvezdice, zvezdice))
+    music['stars'] = float(polne_zvezdice_data) + 0.5 * float (pol_zvezdice_data)
+    # Za štetje glasov moramo pretvoriti string v integer
+    glasovi = music['votes']
+    if 'K' in glasovi:
+        glasovi = int(float(eval(glasovi.replace('K', '*1000'))))
+    elif 'M' in glasovi:
+        glasovi = int(float(eval(glasovi.replace('M', '*1000000'))))
+    else:
+        glasovi = int(float(glasovi))
+    music['votes'] = glasovi
     # težavnost beležimo, kjer je označena
     tezavnost = tezavnost_reg.search(blok)
     if tezavnost:
@@ -219,14 +244,16 @@ def izloci_gnezdene_podatke(all_music):
         if name not in videni_avtorji:
             videni_avtorji.add(name)
             avtorji.append({'name': name})
-        relations_authors.append({'name': name, 'music_id': music_id})
+        relations_authors.append({'original_author': name, 'music_id': music_id, 'original_title': title})
 
     for music in all_music:
         dodaj_user(music.pop('user_id'), music.pop('user'), music['music_id'])
         if music['original_author'] is not None:
-            dodaj_avtor(music.pop('original_author'), music['music_id'], music['original_title'])
+            dodaj_avtor(music.pop('original_author'), music['music_id'], music.pop('original_title'))
         # primer, ko je originalen avtor uporabnik
-        else: pass
+        else: 
+            music.pop('original_author')
+            music.pop('original_title')
         for genre in music.pop('genre'):
             genres.append(
                 {'genre': genre, 'music_id': music['music_id']})
@@ -239,7 +266,7 @@ def izloci_gnezdene_podatke(all_music):
         genre['genre'], genre['music_id']))
     
     relations_users.sort(key=lambda relation : (relation['music_id'], relation['user_id']))
-    relations_authors.sort(key=lambda relation : (relation['name'], relation['music_id']))
+    relations_authors.sort(key=lambda relation : (relation['original_author'], relation['original_title'], relation['music_id']))
 
     return avtorji, users, genres, relations_authors, relations_users
 
@@ -253,11 +280,11 @@ avtorji, users, genres, relations_authors, relations_users = izloci_gnezdene_pod
 # V glavni tabeli izpustimo gnezdene podatke, ki jih najdemo v pomožnih tabelah!
 write_csv(
     all_music,
-    ['music_id', 'title', 'ensemble', 'instrument', 'key', 'date', 'duration',
+    ['music_id', 'title', 'stars', 'votes', 'ensemble', 'instrument', 'key', 'date', 'duration',
         'public_domain', 'favorites', 'difficulty', 'pages', 'views', 'parts', 'link'], 'obdelani-podatki/all_music.csv'
 )
 write_csv(genres, ['genre', 'music_id'], 'obdelani-podatki/genres.csv')
 write_csv(avtorji, ['name'], 'obdelani-podatki/authors.csv'  )
 write_csv(users, ['user_id', 'user'], 'obdelani-podatki/users.csv' )
 write_csv(relations_users, ['music_id', 'user_id'], 'obdelani-podatki/users.csv' )
-write_csv(relations_authors, ['name', 'music_id'], 'obdelani-podatki/users.csv' )
+write_csv(relations_authors, ['original_author', 'original_title', 'music_id'], 'obdelani-podatki/users.csv' )
