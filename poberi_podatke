@@ -198,38 +198,50 @@ def najdi_posamezne(st_strani):
 
 
 def izloci_gnezdene_podatke(all_music):
-    #Poleg glavnega sklopa podatkov želimo še nekaj posebnih tabel, 
-    #ki nam bodo olajšale delo pri analizi podatkov
+    # Poleg glavnega sklopa podatkov želimo še nekaj posebnih tabel, ki bodo združevale 
+    # gnezdene podatke. Pri tem shranimo posebej žanre, avtorje in uporabnike, ter posebej
+    # "relacijske tabele", ki z indeksi povedo, kateri npr. avtor spada h kateri skladbi.
     avtorji, genres, users = [], [], []
     videni_avtorji = set()
     videni_uporabniki = set()
+    videni_zanri = set()
+    relations_authors, relations_users = [], []
 
-    def dodaj_user(id, name):
+    def dodaj_user(id, name, music_id):
+        # Shrani informacije o uporabniku, če ga srečamo prvič;
+        # doda relacijo s to specifično skladbo v relacijsko tabelo.
         if id not in videni_uporabniki:
             videni_uporabniki.add(id)
             users.append({'user_id': id, 'user': name})
+        relations_users.append({'music_id': music_id, 'user_id': id})
 
-    def dodaj_avtor(name):
+    def dodaj_avtor(name, music_id, title):
         if name not in videni_avtorji:
             videni_avtorji.add(name)
-            count = videni_avtorji.__len__()
-            avtorji.append({'name': name, 'st_skladb': count})
+            avtorji.append({'name': name})
+        relations_authors.append({'name': name, 'music_id': music_id})
 
     for music in all_music:
-        dodaj_user(music.pop('user_id'), music.pop('user'))
+        dodaj_user(music.pop('user_id'), music.pop('user'), music['music_id'])
         if music['original_author'] is not None:
-            dodaj_avtor(music.pop('original_author'))
+            dodaj_avtor(music.pop('original_author'), music['music_id'], music['original_title'])
+        # primer, ko je originalen avtor uporabnik
         else: pass
         for genre in music.pop('genre'):
             genres.append(
-                {'music_id': music['music_id'], 'genre': genre})
-
-    avtorji.sort(key=lambda avtor: (avtor['name'], avtor['st_skladb']))
+                {'genre': genre, 'music_id': music['music_id']})
+            
+    #Na koncu tabele še smiselno uredimo
+    
+    avtorji.sort(key=lambda avtor: (avtor['name']))
     users.sort(key=lambda user: (user['user_id'], user['user']))
     genres.sort(key=lambda genre: (
-        genre['music_id'], genre['genre']))
+        genre['genre'], genre['music_id']))
+    
+    relations_users.sort(key=lambda relation : (relation['music_id'], relation['user_id']))
+    relations_authors.sort(key=lambda relation : (relation['name'], relation['music_id']))
 
-    return avtorji, users, genres
+    return avtorji, users, genres, relations_authors, relations_users
 
 
 all_music = []
@@ -237,12 +249,15 @@ for st_strani in range(1, ST_STRANI + 1):
     for music in najdi_posamezne(st_strani):
         all_music.append(music)
 write_json(all_music, 'obdelani-podatki/all_music.json')
-avtorji, users, genres = izloci_gnezdene_podatke(all_music)
+avtorji, users, genres, relations_authors, relations_users = izloci_gnezdene_podatke(all_music)
+# V glavni tabeli izpustimo gnezdene podatke, ki jih najdemo v pomožnih tabelah!
 write_csv(
     all_music,
-    ['music_id', 'user_id', 'title', 'ensemble', 'instrument', 'genre', 'key', 'date', 'duration',
-        'original_author', 'original_title', 'public_domain', 'favorites', 'difficulty', 'pages', 'views', 'parts', 'link'], 'obdelani-podatki/all_music.csv'
+    ['music_id', 'title', 'ensemble', 'instrument', 'key', 'date', 'duration',
+        'public_domain', 'favorites', 'difficulty', 'pages', 'views', 'parts', 'link'], 'obdelani-podatki/all_music.csv'
 )
-write_csv(genres, ['music_id', 'genre'], 'obdelani-podatki/genres.csv')
-write_csv(avtorji, ['name', 'st_skladb'], 'obdelani-podatki/authors.csv'  )
+write_csv(genres, ['genre', 'music_id'], 'obdelani-podatki/genres.csv')
+write_csv(avtorji, ['name'], 'obdelani-podatki/authors.csv'  )
 write_csv(users, ['user_id', 'user'], 'obdelani-podatki/users.csv' )
+write_csv(relations_users, ['music_id', 'user_id'], 'obdelani-podatki/users.csv' )
+write_csv(relations_authors, ['name', 'music_id'], 'obdelani-podatki/users.csv' )
