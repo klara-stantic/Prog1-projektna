@@ -11,7 +11,7 @@ import time
 
 session = requests_html.HTMLSession()
 
-ST_STRANI = 2
+ST_STRANI = 50
 NA_STRANI = 20
 
 ###############################################################################
@@ -106,7 +106,7 @@ tezavnost_reg = re.compile(
 )
 
 original = re.compile(
-    r'<section class=\"ASx44 AJXCt Bz0hi g1QZl\"><h3.*?><a.*?>(?P<original_title>.*?)</a>.*?by <a.*?>(?P<original_author>.*?)</a></h3></section>',
+    r'<section class=\"ASx44 AJXCt Bz0hi g1QZl\"><h3.*?><a.*?>(?P<original_title>.*?)</a>.*?by <a.*?(?P<author_id>\d+).*?>(?P<original_author>.*?)</a></h3></section>',
     flags=re.DOTALL
 )
 
@@ -199,6 +199,7 @@ def data_finder(blok):
     origdata = re.search(original, vsebina)
     if origdata is not None:
         music["original_author"] = origdata.group('original_author')
+        music["author_id"] = int(origdata.group('author_id'))
         music["original_title"] = origdata.group('original_title')
     else:
         music["original_author"] = None
@@ -251,16 +252,16 @@ def izloci_gnezdene_podatke(all_music):
             users.append({'user_id': id, 'user': name})
         relations_users.append({'music_id': music_id, 'user_id': id})
 
-    def dodaj_avtor(name, music_id, title):
+    def dodaj_avtor(id, name, music_id, title):
         if name not in videni_avtorji:
             videni_avtorji.add(name)
-            avtorji.append({'name': name})
-        relations_authors.append({'original_author': name, 'music_id': music_id, 'original_title': title})
+            avtorji.append({'author_id' : id , 'name': name})
+        relations_authors.append({'original_author': id, 'music_id': music_id, 'original_title': title})
 
     for music in all_music:
         dodaj_user(music.pop('user_id'), music.pop('user'), music['music_id'])
         if music['original_author'] is not None:
-            dodaj_avtor(music.pop('original_author'), music['music_id'], music.pop('original_title'))
+            dodaj_avtor(music.pop('author_id'), music.pop('original_author'), music['music_id'], music.pop('original_title'))
         # primer, ko je originalen avtor uporabnik
         else: 
             music.pop('original_author')
@@ -271,7 +272,7 @@ def izloci_gnezdene_podatke(all_music):
             
     #Na koncu tabele še smiselno uredimo
     
-    avtorji.sort(key=lambda avtor: (avtor['name']))
+    avtorji.sort(key=lambda avtor: (avtor['author_id']))
     users.sort(key=lambda user: (user['user_id'], user['user']))
     genres.sort(key=lambda genre: (
         genre['genre'], genre['music_id']))
@@ -281,12 +282,12 @@ def izloci_gnezdene_podatke(all_music):
 
     return avtorji, users, genres, relations_authors, relations_users
 
-
-all_music = []
-for st_strani in range(1, ST_STRANI + 1):
-    for music in najdi_posamezne(st_strani):
-        all_music.append(music)
-write_json(all_music, 'obdelani-podatki/all_music.json')
+#all_music = []
+all_music = json.loads(read_file_to_string('obdelani-podatki', 'all_music.json'))
+#for st_strani in range(1, ST_STRANI + 1):
+#    for music in najdi_posamezne(st_strani):
+#        all_music.append(music)
+#write_json(all_music, 'obdelani-podatki/all_music.json')
 avtorji, users, genres, relations_authors, relations_users = izloci_gnezdene_podatke(all_music)
 # V glavni tabeli izpustimo gnezdene podatke, ki jih najdemo v pomožnih tabelah!
 write_csv(
@@ -295,7 +296,7 @@ write_csv(
         'public_domain', 'favorites', 'difficulty', 'pages', 'views', 'parts', 'link'], 'obdelani-podatki/all_music.csv'
 )
 write_csv(genres, ['genre', 'music_id'], 'obdelani-podatki/genres.csv')
-write_csv(avtorji, ['name'], 'obdelani-podatki/authors.csv'  )
+write_csv(avtorji, ['author_id', 'name'], 'obdelani-podatki/authors.csv'  )
 write_csv(users, ['user_id', 'user'], 'obdelani-podatki/users.csv' )
 write_csv(relations_users, ['music_id', 'user_id'], 'obdelani-podatki/relacije_users.csv' )
 write_csv(relations_authors, ['original_author', 'original_title', 'music_id'], 'obdelani-podatki/relacije_authors.csv' )
