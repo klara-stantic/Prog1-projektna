@@ -282,7 +282,10 @@ def izloci_gnezdene_podatke(all_music):
 
     return avtorji, users, genres, relations_authors, relations_users
 
+
+#Uporabimo za pridobivanje html strani in izdelavo .json datoteke
 #all_music = []
+#Uporabimo, ko že imamo .json datoteko in želimo .csv tabele
 all_music = json.loads(read_file_to_string('obdelani-podatki', 'all_music.json'))
 #for st_strani in range(1, ST_STRANI + 1):
 #    for music in najdi_posamezne(st_strani):
