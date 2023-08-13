@@ -1,4 +1,4 @@
-# Analiza not 
+*# Analiza not 
 
 V projektni nalogi bom analizirala notne zapise, ki so na voljo na spletni strani 
 [Musescore](https://musescore.com/sheetmusic).
@@ -6,25 +6,27 @@ V projektni nalogi bom analizirala notne zapise, ki so na voljo na spletni stran
 Izhodiščno število analiziranih strani bo 50. 
 
 Za posamezen vnos me bodo zanimali naslednji podatki:
-* Naslov in avtor skladbe
+* Naslov in avtor objave
 * Naslov in avtor originala
 * Datum objave
 * Tonaliteta
-* Mesto na seznamu 
 * Koliko delov, strani, itd. ima skladba
 * Koliko "všečkov" ima vnos
-* Težavnost (easy, intermediate, advanced) - na voljo samo za note za klavir
+* Težavnost (easy, intermediate, advanced) - če je podatek na voljo
 * Vrsta zasedbe (solo, duet, itd.)
-* Inštrument, za katerega so note namenjene (klavir, kitara, itd.)
+* Inštrument, kateremu so note namenjene (klavir, kitara, itd.)
 * Glasbena zvrst, ki ji skladba pripada (klasika, jazz, itd.)
 Ker je spletna stran v angleškem jeziku, bom tudi podatke pridobila v angleščini.
 
-V nalogi me bo zanimalo:
-* V katero zvrst spada največ skladb?
-* Za kateri inštrument/zasedbo so največkrat napisane?
-* Ali kateri od avtorjev / žanrov posebej izstopa?
-* Katera od težavnosti je najbolj zastopana?
-Poleg tega bom pozorna tudi na možne povezave med parametri.
+V nalogi bom najprej poiskala preproste informacije o danih podatkih.
+* Podatki o popularnosti in številu vnosov za posamezne kategorije
+* Povezave med popularnostjo in številčnostjo za posamezne kategorije
+* Ima tonaliteta kakšno povezavo s trajanjem skladbe? Kaj pa s številom strani, delom?
+* Preproste povezave med parametri
+
+V nadaljevanju pa bom iskala kompleksnejše povezave med parametri.
+* Časovni trendi - kako se s časom spreminja zastopanost originalnih skladb
+* Ali obstaja recept za uspešno objavo?
 
 OPOMBA
 Ker so datoteke s shranjenimi podatki velike, in 
