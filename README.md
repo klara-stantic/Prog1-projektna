@@ -3,7 +3,7 @@
 V projektni nalogi bom analizirala notne zapise, ki so na voljo na spletni strani 
 [Musescore](https://musescore.com/sheetmusic).
 -
-Izhodiščno število analiziranih strani bo 50. 
+Izhodiščno število analiziranih strani bo 100. 
 
 Za posamezen vnos me bodo zanimali naslednji podatki:
 * Naslov in avtor objave
@@ -28,7 +28,10 @@ V nadaljevanju pa bom iskala kompleksnejše povezave med parametri.
 * Časovni trendi - kako se s časom spreminja zastopanost originalnih skladb
 * Ali obstaja recept za uspešno objavo?
 
-OPOMBA
-Ker so datoteke s shranjenimi podatki velike, in 
-jih lahko vedno pridobimo tako, da poženemo skripto 'poberi_podatke.py', 
-so naloženi le vzorčni podatki iz prvih dveh strani. Za vse ostale strani je postopek pridobivanja popolnoma enak.
+Hipoteze
+* Največ skladb bo klasične zvrsti in napisanih za klavir in kitaro
+* Originali z veliko popularnostjo bodo imeli veliko povezanih skladb
+* Predpostavljam, da bodo v prihodnosti med najpopularnejšimi še vedno klasične glasbe, saj mnoge veljajo za brezčasna dela.
+* Za uspešno objavo predpostavljam, da obstajata dva recepta. 
+    * Izbrana skladba je v čim bolj nišnih kategorijah, saj je v teh manj "konkurence"
+    * Izbrana skladba je del najpopularnejših skupin, saj je zanimanje za te v splošnem večje
