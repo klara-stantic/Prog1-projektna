@@ -29,7 +29,9 @@ V nadaljevanju pa bom iskala kompleksnejše povezave med parametri.
 * Ali obstaja recept za uspešno objavo?
 
 Hipoteze
-* Največ skladb bo klasične zvrsti in napisanih za klavir in kitaro
+* Največ skladb je klasične zvrsti, in napisanih za klavir in kitaro
+* Največ skladb je napisanih v C-duru in a-molu, večje zastopanosti ostalih tonalitet bodo med klasičnimi.
+* Klasične skladbe bodo imele največjo kompleksnost, torej bodo najdaljše in z največ deli
 * Originali z veliko popularnostjo bodo imeli veliko povezanih skladb
 * Predpostavljam, da bodo v prihodnosti med najpopularnejšimi še vedno klasične glasbe, saj mnoge veljajo za brezčasna dela.
 * Za uspešno objavo predpostavljam, da obstajata dva recepta. 
