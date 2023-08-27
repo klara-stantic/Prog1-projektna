@@ -27,7 +27,7 @@ V nalogi bom najprej poiskala preproste informacije o danih podatkih.
 
 Sestavila bom program, ki bo glede na dane parametre predvidel, če je skladba v javni rabi ali ne.
 
-Hipoteze
+**Hipoteze**
 * Največ skladb je klasične zvrsti, in napisanih za klavir in kitaro
 * Največ skladb je napisanih v C-duru in a-molu, večje zastopanosti ostalih tonalitet bodo med klasičnimi.
 * Klasične skladbe bodo imele največjo kompleksnost, torej bodo najdaljše in z največ deli
