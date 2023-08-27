@@ -1,4 +1,4 @@
-*# Analiza not 
+# Analiza not 
 
 V projektni nalogi bom analizirala notne zapise, ki so na voljo na spletni strani 
 [Musescore](https://musescore.com/sheetmusic).
