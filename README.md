@@ -32,7 +32,6 @@ Hipoteze
 * Največ skladb je klasične zvrsti, in napisanih za klavir in kitaro
 * Največ skladb je napisanih v C-duru in a-molu, večje zastopanosti ostalih tonalitet bodo med klasičnimi.
 * Klasične skladbe bodo imele največjo kompleksnost, torej bodo najdaljše in z največ deli
-* Originali z veliko popularnostjo bodo imeli veliko povezanih skladb
 * Predpostavljam, da bodo v prihodnosti med najpopularnejšimi še vedno klasične glasbe, saj mnoge veljajo za brezčasna dela.
 * Za uspešno objavo predpostavljam, da obstajata dva recepta. 
     * Izbrana skladba je v čim bolj nišnih kategorijah, saj je v teh manj "konkurence"
