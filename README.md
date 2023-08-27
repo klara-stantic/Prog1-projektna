@@ -23,10 +23,9 @@ V nalogi bom najprej poiskala preproste informacije o danih podatkih.
 * Povezave med popularnostjo in številčnostjo za posamezne kategorije
 * Ima tonaliteta kakšno povezavo s trajanjem skladbe? Kaj pa s številom strani, delom?
 * Preproste povezave med parametri
-
-V nadaljevanju pa bom iskala kompleksnejše povezave med parametri.
-* Časovni trendi - kako se s časom spreminja zastopanost originalnih skladb
 * Ali obstaja recept za uspešno objavo?
+
+Sestavila bom program, kibo glede na dane parametre predvidel, če je skladba v javni rabi ali ne.
 
 Hipoteze
 * Največ skladb je klasične zvrsti, in napisanih za klavir in kitaro
