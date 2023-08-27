@@ -1,3 +1,4 @@
+# Uvoz potrebnih knjižnjic
 import csv
 import json
 import os
@@ -5,10 +6,9 @@ import requests
 import sys
 import requests_html
 import re
-import pandas as pd
 import time
 
-
+# Definiram session za delo z requests_HTML
 session = requests_html.HTMLSession()
 
 ST_STRANI = 100
@@ -28,7 +28,6 @@ def pripravi_imenik(dir):
 # spletna stran, iz katere pobiram podatke, je generirana preko Java Script skripte,
 # zato sem namesto knjižnjice requests uporabila requests-html,
 # ki omogoči, da skripto zaženem pred pobiranjem strani, in tako pridobim celoten html.
-
 
 def shrani_spletno_stran(url, ime_datoteke, dir, vsili_prenos=False):
     '''Vsebino strani na danem naslovu shrani v datoteko z danim imenom.'''
@@ -76,7 +75,7 @@ def write_json(objekt, filename):
 ###############################################################################
 # STAGE 2: Priprava vzorcev
 ###############################################################################
-
+# Definicije vseh potrebnih vzorcev za iskanje z regularnimi izrazi.
 
 blok_regular = re.compile(
     r"<article class=\"c9ju0 J5IQp mX2qa\">(.*?)</div></article>",
@@ -106,10 +105,6 @@ original = re.compile(
     flags=re.DOTALL
 )
 
-tabela_star = re.compile(
-    r'<tbody>.*?Duration.*?<div class=\"C4LKv V4kyC N30cN\">(?P<duration>.*?)</div>.*?Key.*?<div class=\"C4LKv V4kyC N30cN\">(?P<key>.*?)</div>.*?(?P<genre>Genre.*?(?:,? ?<a class=.*?>\w*?)</a>.*?</div></td>).*?</table>',
-    flags=re.DOTALL
-)
 
 tabela = re.compile(
     r'Duration.*?class=\"C4LKv V4kyC N30cN\">(?P<duration>.*?)</div>.*?<h3 class=\"C4LKv V4kyC\">.*?Key</h3>.*?N30cN\">(?P<key>.*?)</div>.*?(?P<genre>Genre.*?</td>).*?',
@@ -139,7 +134,7 @@ link = re.compile(
 
 
 ###############################################################################
-# STAGE 3: Iskanje podatkov
+# STAGE 3: Funkcije za iskanje in shranjevanje podatkov
 ###############################################################################
 
 
@@ -173,6 +168,7 @@ def data_finder(blok):
     # datoteka podstran je samo pomožna, za to nas ne skrbi, če jo po uporavi za en vnos
     # zbrišemo in shranimo noter nov zapis. To je tudi malo bolj prijazno iz vidika količine podatkov,
     # shranjenih v mape
+    
     link = music.get("link")
     shrani_spletno_stran(link, "podstran.html", "music")
     vsebina = read_file_to_string("music", "podstran.html")
@@ -211,6 +207,7 @@ def data_finder(blok):
 
 
 def najdi_posamezne(st_strani):
+    '''Za vsako stran shrani vsebino in jo razreže na bloke.'''
     url = (
         f'https://musescore.com/sheetmusic?page={st_strani}'
     )
@@ -223,13 +220,13 @@ def najdi_posamezne(st_strani):
 
 
 def izloci_gnezdene_podatke(all_music):
+    '''Gnezdene podatke shrani v pomožne in relacijske tabele.'''
     # Poleg glavnega sklopa podatkov želimo še nekaj posebnih tabel, ki bodo združevale 
     # gnezdene podatke. Pri tem shranimo posebej žanre, avtorje in uporabnike, ter posebej
     # "relacijske tabele", ki z indeksi povedo, kateri npr. avtor spada h kateri skladbi.
     avtorji, genres, users = [], [], []
     videni_avtorji = set()
     videni_uporabniki = set()
-    videni_zanri = set()
     relations_authors, relations_users = [], []
 
     def dodaj_user(id, name, music_id):
@@ -259,7 +256,6 @@ def izloci_gnezdene_podatke(all_music):
                 {'genre': genre.replace('&amp;', '&'), 'music_id': music['music_id']})
             
     #Na koncu tabele še smiselno uredimo
-    
     avtorji.sort(key=lambda avtor: (avtor['author_id']))
     users.sort(key=lambda user: (user['user_id'], user['user']))
     genres.sort(key=lambda genre: (
@@ -270,6 +266,10 @@ def izloci_gnezdene_podatke(all_music):
 
     return avtorji, users, genres, relations_authors, relations_users
 
+
+###############################################################################
+# STAGE 4: Glavna zanka programa
+###############################################################################
 
 #Uporabimo za pridobivanje html strani in izdelavo .json datoteke
 all_music = []
